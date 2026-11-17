@@ -55,6 +55,7 @@ resource "azurerm_cognitive_account" "openai" {
   #checkov:skip=CKV_AZURE_134:GitHub-hosted runners must reach the endpoint; private access requires a VNet, out of scope
   #checkov:skip=CKV_AZURE_236:Remediation script authenticates with an API key stored in Key Vault; Entra ID auth is a planned improvement
   #checkov:skip=CKV2_AZURE_22:Microsoft-managed keys are sufficient for a lab; CMK adds Key Vault key management overhead
+  #checkov:skip=CKV_AZURE_247:Outbound access is restricted; no outbound FQDNs are required, so no allowlist is defined
 
   name                               = "oai-${var.prefix}-${var.environment}-${random_id.suffix.hex}"
   location                           = var.location
