@@ -26,8 +26,8 @@ resource "azurerm_storage_account" "lab" {
   min_tls_version          = "TLS1_2"
 
   # Fixed: block public network access and anonymous blob access
-  public_network_access_enabled   = true
-  allow_nested_items_to_be_public = true
+  public_network_access_enabled   = false
+  allow_nested_items_to_be_public = false
 
   # Fixed: soft delete for blobs and containers
   blob_properties {
