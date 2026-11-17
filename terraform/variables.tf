@@ -35,13 +35,13 @@ variable "openai_sku" {
 variable "model_name" {
   description = "OpenAI model to deploy."
   type        = string
-  default     = "gpt-4o-mini"
+  default     = "gpt-5.4-mini"
 }
 
 variable "model_version" {
   description = "Model version. Confirm regional availability before changing."
   type        = string
-  default     = "2024-07-18"
+  default     = "2026-03-17"
 }
 
 variable "model_capacity" {
