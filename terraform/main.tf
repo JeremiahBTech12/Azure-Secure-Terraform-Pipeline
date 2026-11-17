@@ -47,3 +47,65 @@ resource "azurerm_storage_account" "lab" {
 
   tags = var.tags
 }
+
+data "azurerm_client_config" "current" {}
+
+# Azure OpenAI account
+resource "azurerm_cognitive_account" "openai" {
+  name                          = "oai-${var.prefix}-${var.environment}-${random_id.suffix.hex}"
+  location                      = var.location
+  resource_group_name           = azurerm_resource_group.lab.name
+  kind                          = "OpenAI"
+  sku_name                      = var.openai_sku
+  custom_subdomain_name         = "oai-${var.prefix}-${random_id.suffix.hex}"
+  public_network_access_enabled = true
+
+  tags = var.tags
+}
+
+# Model deployment inside the OpenAI account
+resource "azurerm_cognitive_deployment" "gpt" {
+  name                 = "gpt-deployment"
+  cognitive_account_id = azurerm_cognitive_account.openai.id
+
+  model {
+    format  = "OpenAI"
+    name    = var.model_name
+    version = var.model_version
+  }
+
+  scale {
+    type     = "Standard"
+    capacity = var.model_capacity
+  }
+}
+
+# Key Vault to hold the OpenAI API key
+resource "azurerm_key_vault" "lab" {
+  name                       = "kv-${var.prefix}-${random_id.suffix.hex}"
+  location                   = var.location
+  resource_group_name        = azurerm_resource_group.lab.name
+  tenant_id                  = data.azurerm_client_config.current.tenant_id
+  sku_name                   = "standard"
+  enable_rbac_authorization  = true
+  soft_delete_retention_days = 7
+  purge_protection_enabled   = false
+
+  tags = var.tags
+}
+
+# Let the pipeline identity write secrets to the vault
+resource "azurerm_role_assignment" "kv_deployer" {
+  scope                = azurerm_key_vault.lab.id
+  role_definition_name = "Key Vault Secrets Officer"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
+
+# Store the OpenAI key in Key Vault, never in code
+resource "azurerm_key_vault_secret" "openai_key" {
+  name         = "openai-api-key"
+  value        = azurerm_cognitive_account.openai.primary_access_key
+  key_vault_id = azurerm_key_vault.lab.id
+
+  depends_on = [azurerm_role_assignment.kv_deployer]
+}

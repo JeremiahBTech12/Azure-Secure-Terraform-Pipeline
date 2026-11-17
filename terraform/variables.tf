@@ -25,3 +25,27 @@ variable "tags" {
     Project     = "Azure-Secure-Terraform-Pipeline"
   }
 }
+
+variable "openai_sku" {
+  description = "Azure OpenAI pricing tier."
+  type        = string
+  default     = "S0"
+}
+
+variable "model_name" {
+  description = "OpenAI model to deploy."
+  type        = string
+  default     = "gpt-4o-mini"
+}
+
+variable "model_version" {
+  description = "Model version. Confirm regional availability before changing."
+  type        = string
+  default     = "2024-07-18"
+}
+
+variable "model_capacity" {
+  description = "Capacity in thousands of tokens per minute. Kept low to stay within quota."
+  type        = number
+  default     = 10
+}
