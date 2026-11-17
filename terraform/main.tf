@@ -52,13 +52,22 @@ data "azurerm_client_config" "current" {}
 
 # Azure OpenAI account
 resource "azurerm_cognitive_account" "openai" {
-  name                          = "oai-${var.prefix}-${var.environment}-${random_id.suffix.hex}"
-  location                      = var.location
-  resource_group_name           = azurerm_resource_group.lab.name
-  kind                          = "OpenAI"
-  sku_name                      = var.openai_sku
-  custom_subdomain_name         = "oai-${var.prefix}-${random_id.suffix.hex}"
-  public_network_access_enabled = true
+  #checkov:skip=CKV_AZURE_134:GitHub-hosted runners must reach the endpoint; private access requires a VNet, out of scope
+  #checkov:skip=CKV_AZURE_236:Remediation script authenticates with an API key stored in Key Vault; Entra ID auth is a planned improvement
+  #checkov:skip=CKV2_AZURE_22:Microsoft-managed keys are sufficient for a lab; CMK adds Key Vault key management overhead
+
+  name                               = "oai-${var.prefix}-${var.environment}-${random_id.suffix.hex}"
+  location                           = var.location
+  resource_group_name                = azurerm_resource_group.lab.name
+  kind                               = "OpenAI"
+  sku_name                           = var.openai_sku
+  custom_subdomain_name              = "oai-${var.prefix}-${random_id.suffix.hex}"
+  public_network_access_enabled      = true
+  outbound_network_access_restricted = true
+
+  identity {
+    type = "SystemAssigned"
+  }
 
   tags = var.tags
 }
@@ -82,6 +91,10 @@ resource "azurerm_cognitive_deployment" "gpt" {
 
 # Key Vault to hold the OpenAI API key
 resource "azurerm_key_vault" "lab" {
+  #checkov:skip=CKV_AZURE_189:GitHub-hosted runners must write the secret; private access requires a VNet, out of scope
+  #checkov:skip=CKV_AZURE_109:Firewall deny-by-default would block GitHub-hosted runners; access is controlled by RBAC
+  #checkov:skip=CKV2_AZURE_32:Private endpoint requires a VNet; out of scope for this environment
+
   name                       = "kv-${var.prefix}-${random_id.suffix.hex}"
   location                   = var.location
   resource_group_name        = azurerm_resource_group.lab.name
@@ -89,7 +102,7 @@ resource "azurerm_key_vault" "lab" {
   sku_name                   = "standard"
   enable_rbac_authorization  = true
   soft_delete_retention_days = 7
-  purge_protection_enabled   = false
+  purge_protection_enabled   = true
 
   tags = var.tags
 }
@@ -103,9 +116,11 @@ resource "azurerm_role_assignment" "kv_deployer" {
 
 # Store the OpenAI key in Key Vault, never in code
 resource "azurerm_key_vault_secret" "openai_key" {
-  name         = "openai-api-key"
-  value        = azurerm_cognitive_account.openai.primary_access_key
-  key_vault_id = azurerm_key_vault.lab.id
+  name            = "openai-api-key"
+  value           = azurerm_cognitive_account.openai.primary_access_key
+  key_vault_id    = azurerm_key_vault.lab.id
+  content_type    = "api-key"
+  expiration_date = "2027-12-31T00:00:00Z"
 
   depends_on = [azurerm_role_assignment.kv_deployer]
 }
