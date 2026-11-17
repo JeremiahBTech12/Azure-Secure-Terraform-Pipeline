@@ -12,3 +12,18 @@ output "storage_account_id" {
   value       = azurerm_storage_account.lab.id
   description = "Storage account resource ID."
 }
+
+output "openai_endpoint" {
+  value       = azurerm_cognitive_account.openai.endpoint
+  description = "Azure OpenAI endpoint URL."
+}
+
+output "openai_deployment_name" {
+  value       = azurerm_cognitive_deployment.gpt.name
+  description = "Model deployment name, passed to the SDK as the model."
+}
+
+output "key_vault_name" {
+  value       = azurerm_key_vault.lab.name
+  description = "Key Vault holding the OpenAI API key."
+}
