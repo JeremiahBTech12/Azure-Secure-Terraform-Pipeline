@@ -1,9 +1,38 @@
-# Terraform
+# Terraform working directory — never commit
 .terraform/
+
+# State files — contain resource IDs, passwords, sensitive outputs
 *.tfstate
 *.tfstate.*
-*.tfvars
-crash.log
 
-# Keep the example file
+# Plan files — contain full infrastructure details
+*.tfplan
+
+# Variable files with real values — never commit
+*.tfvars
+*.tfvars.json
+# EXCEPTION: commit the safe template
 !terraform.tfvars.example
+
+# Terraform crash logs
+crash.log
+crash.*.log
+
+# Override files (local developer customizations)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# NOTE: DO NOT add .terraform.lock.hcl here
+# That file should be committed — it pins provider versions
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+.env
+venv/
