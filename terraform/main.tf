@@ -10,12 +10,14 @@ resource "azurerm_resource_group" "lab" {
   tags     = var.tags
 }
 
-# ─────────────────────────────────────────────────────────────
-# INTENTIONAL VULNERABILITY: left in for the Checkov security scan.
-# public_network_access_enabled = true is a deliberate flaw.
-# The pipeline should flag it, then it gets fixed.
-# ─────────────────────────────────────────────────────────────
 resource "azurerm_storage_account" "lab" {
+  #checkov:skip=CKV2_AZURE_1:Microsoft-managed keys are sufficient for a lab; CMK adds Key Vault cost and complexity
+  #checkov:skip=CKV2_AZURE_33:Private endpoint requires a VNet; out of scope for this environment
+  #checkov:skip=CKV_AZURE_206:LRS is acceptable for non-critical lab data; GRS doubles cost
+  #checkov:skip=CKV_AZURE_33:No queues are used in this storage account
+  #checkov:skip=CKV2_AZURE_40:Shared Key is still required by the Terraform provider for data-plane reads
+  #checkov:skip=CKV2_AZURE_41:sas_policy is configured; check does not detect it with azurerm 3.x and no SAS tokens are issued in this lab
+
   name                     = "${var.prefix}${random_id.suffix.hex}"
   resource_group_name      = azurerm_resource_group.lab.name
   location                 = azurerm_resource_group.lab.location
@@ -23,8 +25,25 @@ resource "azurerm_storage_account" "lab" {
   account_replication_type = "LRS"
   min_tls_version          = "TLS1_2"
 
-  # SECURITY FLAW: public access enabled. Checkov will flag this.
-  public_network_access_enabled = true
+  # Fixed: block public network access and anonymous blob access
+  public_network_access_enabled   = false
+  allow_nested_items_to_be_public = false
+
+  # Fixed: soft delete for blobs and containers
+  blob_properties {
+    delete_retention_policy {
+      days = 7
+    }
+    container_delete_retention_policy {
+      days = 7
+    }
+  }
+
+  # Fixed: SAS tokens expire after one day
+  sas_policy {
+    expiration_period = "01.00:00:00"
+    expiration_action = "Log"
+  }
 
   tags = var.tags
 }
