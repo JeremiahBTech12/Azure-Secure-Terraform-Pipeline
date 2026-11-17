@@ -85,7 +85,7 @@ resource "azurerm_cognitive_deployment" "gpt" {
   }
 
   scale {
-    type     = "Standard"
+    type     = "GlobalStandard"
     capacity = var.model_capacity
   }
 }
