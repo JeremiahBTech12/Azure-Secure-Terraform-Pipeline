@@ -16,6 +16,7 @@ resource "azurerm_storage_account" "lab" {
   #checkov:skip=CKV_AZURE_206:LRS is acceptable for non-critical lab data; GRS doubles cost
   #checkov:skip=CKV_AZURE_33:No queues are used in this storage account
   #checkov:skip=CKV2_AZURE_40:Shared Key is still required by the Terraform provider for data-plane reads
+  #checkov:skip=CKV2_AZURE_41:sas_policy is configured; check does not detect it with azurerm 3.x and no SAS tokens are issued in this lab
 
   name                     = "${var.prefix}${random_id.suffix.hex}"
   resource_group_name      = azurerm_resource_group.lab.name
